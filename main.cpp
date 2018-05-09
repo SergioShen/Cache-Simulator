@@ -74,28 +74,33 @@ void Initialize(int argc, char **argv) {
 }
 
 void PrintStats() {
+    int64_t total_time = 0;
     printf("\n********\n");
     StorageStats stats;
     l1->GetStats(stats);
+    total_time += stats.access_time;
     printf("Total L1 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
 
 #ifdef MULTI_LEVEL
     l2->GetStats(stats);
+    total_time += stats.access_time;
     printf("Total L2 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
 
     l3->GetStats(stats);
+    total_time += stats.access_time;
     printf("Total L3 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
 
 #endif // MULTI_LEVEL
     memory->GetStats(stats);
-    printf("Total Memory access time: %dns\n", stats.access_time);
-
+    total_time += stats.access_time;
+    printf("Total Memory access time: %d ns\n", stats.access_time);
+    printf("TOTAL ACCESS TIME: %d ns\n", total_time);
 }
 
 int main(int argc, char **argv) {
