@@ -42,7 +42,9 @@ public:
 
     void GetStats(StorageStats &ss) { ss = stats_; }
 
-    void SetLatency(StorageLatency sl) { latency_ = sl; }
+    void SetLatency(StorageLatency sl) {
+        latency_ = sl;
+    }
 
     void GetLatency(StorageLatency &sl) { sl = latency_; }
 
@@ -53,8 +55,7 @@ public:
     // [i|o] content: in|out data
     // [out] hit: 0|1 for miss|hit
     // [out] time: total access time
-    virtual void HandleRequest(uint64_t addr, int bytes, int read,
-                               char *content, int &hit, int &time) = 0;
+    virtual void HandleRequest(uint64_t addr, int bytes, int read, int &hit, int &time) = 0;
 
 protected:
     StorageStats stats_;

@@ -5,40 +5,112 @@
 // Date: 5/8/18
 //
 
-#include "stdio.h"
+#include <stdio.h>
+#include <string.h>
 #include "cache.h"
 #include "memory.h"
+#include "config.h"
+#include "utility.h"
 
-int main(void) {
-    Memory m;
-    Cache l1;
-    l1.SetLower(&m);
+bool debug_enabled;
+bool initializing;
 
-    StorageStats s;
-    s.access_time = 0;
-    m.SetStats(s);
-    l1.SetStats(s);
+Memory *memory;
+Cache *l1;
+FILE *trace_file;
 
-    StorageLatency ml;
-    ml.bus_latency = 6;
-    ml.hit_latency = 100;
-    m.SetLatency(ml);
+#ifdef MULTI_LEVEL
+Cache *l2;
+Cache *l3;
+#endif
 
-    StorageLatency ll;
-    ll.bus_latency = 3;
-    ll.hit_latency = 10;
-    l1.SetLatency(ll);
+void Initialize(int argc, char **argv) {
+    initializing = true;
+    // Build cache hierarchy
+    DEBUG("Memory initializing\n");
+    memory = new Memory();
+    memory->SetLatency(get_memory_latency());
+    memory->SetStats(get_zero_stats());
+    DEBUG("Memory initialized\n");
+
+    l1 = new Cache();
+    l1->SetLatency(get_l1_cache_latency());
+    l1->SetConfig(get_l1_cache_config());
+    l1->SetStats(get_zero_stats());
+    DEBUG("L1 cache initialized\n");
+#ifdef MULTI_LEVEL
+    l2 = new Cache();
+    l2->SetLatency(get_l2_cache_latency());
+    l2->SetConfig(get_l2_cache_config());
+    l2->SetStats(get_zero_stats());
+    DEBUG("L2 cache initialized\n");
+
+    l3 = new Cache();
+    l3->SetLatency(get_l3_cache_latency());
+    l3->SetConfig(get_l3_cache_config());
+    l3->SetStats(get_zero_stats());
+    DEBUG("L3 cache initialized\n");
+
+    l3->SetLower(memory);
+    l2->SetLower(l3);
+    l1->SetLower(l2);
+#else // MULTI_LEVEL
+    l1->SetLower(memory);
+#endif // MULTI_LEVEL
+
+    // Parse arguments
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-d"))
+            debug_enabled = true;
+        else {
+            if (i != argc - 1)
+                fprintf(stderr, "Invalid command\n");
+            DEBUG("Open trace file: %s\n", argv[i]);
+            trace_file = fopen(argv[i], "r");
+        }
+    }
+
+    initializing = false;
+}
+
+void PrintStats() {
+    printf("\n********\n");
+    StorageStats stats;
+    l1->GetStats(stats);
+    printf("Total L1 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
+    printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
+    printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+
+#ifdef MULTI_LEVEL
+    l2->GetStats(stats);
+    printf("Total L2 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
+    printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
+    printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+
+    l3->GetStats(stats);
+    printf("Total L3 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
+    printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
+    printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+
+#endif // MULTI_LEVEL
+    memory->GetStats(stats);
+    printf("Total Memory access time: %dns\n", stats.access_time);
+
+}
+
+int main(int argc, char **argv) {
+    DEBUG("Start up\n");
+    Initialize(argc, argv);
 
     int hit, time;
-    char content[64];
-    l1.HandleRequest(0, 0, 1, content, hit, time);
-    printf("Request access time: %dns\n", time);
-    l1.HandleRequest(1024, 0, 1, content, hit, time);
-    printf("Request access time: %dns\n", time);
+    char method[8];
+    uint64_t address;
+    while (fscanf(trace_file, "%s%ld", method, &address) == 2) {
+        DEBUG("\n*** Trace: %s %16.16lx\n", method, address);
+        l1->HandleRequest(address, 1, method[0] == 'r', hit, time);
+        DEBUG("--- Request time: %d\n", time);
+    }
 
-    l1.GetStats(s);
-    printf("Total L1 access time: %dns\n", s.access_time);
-    m.GetStats(s);
-    printf("Total Memory access time: %dns\n", s.access_time);
+    PrintStats();
     return 0;
 }

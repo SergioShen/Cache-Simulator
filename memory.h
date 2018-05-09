@@ -18,8 +18,7 @@ public:
     ~Memory() {}
 
     // Main access process
-    void HandleRequest(uint64_t addr, int bytes, int read,
-                       char *content, int &hit, int &time);
+    void HandleRequest(uint64_t addr, int bytes, int read, int &hit, int &time);
 
 private:
     // Memory implement
