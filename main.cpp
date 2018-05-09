@@ -99,7 +99,7 @@ void PrintStats() {
 #endif // MULTI_LEVEL
     memory->GetStats(stats);
     total_time += stats.access_time;
-    printf("Total Memory access time: %d ns\n", stats.access_time);
+    printf("Total memory access time: %d cycle, access count: %d\n", stats.access_time, stats.access_counter);
     printf("TOTAL ACCESS TIME: %d ns\n", total_time);
 }
 
