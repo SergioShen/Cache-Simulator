@@ -18,6 +18,8 @@ StorageLatency get_l1_cache_latency();
 
 CacheConfig get_l1_cache_config();
 
+PrefetchConfig get_l1_prefetch_config();
+
 StorageStats get_zero_stats();
 
 #ifdef MULTI_LEVEL
@@ -29,6 +31,10 @@ StorageLatency get_l3_cache_latency();
 CacheConfig get_l2_cache_config();
 
 CacheConfig get_l3_cache_config();
+
+PrefetchConfig get_l2_prefetch_config();
+
+PrefetchConfig get_l3_prefetch_config();
 
 #endif // MULTI_LEVEL
 

@@ -44,6 +44,14 @@ CacheConfig get_l1_cache_config() {
     return config;
 }
 
+PrefetchConfig get_l1_prefetch_config() {
+    PrefetchConfig config;
+    config.prefetch = true;
+    config.prefetch_num = 1;
+
+    return config;
+}
+
 StorageStats get_zero_stats() {
     StorageStats stats;
     memset(&stats, 0, sizeof(stats));
@@ -101,6 +109,22 @@ CacheConfig get_l3_cache_config() {
     ASSERT(config.size = config.block_size * config.associativity * config.set_num);
     ASSERT(config.block_size == 1 << config.num_of_bits_block);
     ASSERT(config.set_num == 1 << config.num_of_bits_index);
+
+    return config;
+}
+
+PrefetchConfig get_l2_prefetch_config() {
+    PrefetchConfig config;
+    config.prefetch = true;
+    config.prefetch_num = 2;
+
+    return config;
+}
+
+PrefetchConfig get_l3_prefetch_config() {
+    PrefetchConfig config;
+    config.prefetch = true;
+    config.prefetch_num = 4;
 
     return config;
 }

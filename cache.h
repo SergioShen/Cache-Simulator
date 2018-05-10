@@ -23,12 +23,16 @@ typedef struct CacheConfig_ {
 } CacheConfig;
 
 typedef struct CacheBlock_ {
-public:
     bool valid_;
     bool dirty_;
     int access_counter; // Used for LRU replacement
     uint64_t tag_;
 } CacheBlock;
+
+typedef struct PrefetchConfig_ {
+    bool prefetch;
+    int prefetch_num;
+} PrefetchConfig;
 
 class Cache : public Storage {
 public:
@@ -42,9 +46,13 @@ public:
         BuildBlocks();
     }
 
-    void GetConfig(CacheConfig cc) { cc = config_; }
+    void GetConfig(CacheConfig &cc) { cc = config_; }
 
     void SetLower(Storage *ll) { lower_ = ll; }
+
+    void SetPrefetchConfig(PrefetchConfig pc) { prefetch_config_ = pc; }
+
+    void GetPrefetchConfig(PrefetchConfig &pc) { pc = prefetch_config_; }
 
     // Main access process
     void HandleRequest(uint64_t addr, int bytes, int read, int &hit, int &time);
@@ -62,11 +70,12 @@ private:
     // Prefetching
     bool PrefetchDecision();
 
-    void PrefetchAlgorithm();
+    void Prefetch(uint64_t addr);
 
     void BuildBlocks();
 
     CacheConfig config_;
+    PrefetchConfig prefetch_config_;
     Storage *lower_;
     CacheBlock **cache_blocks_;
     DISALLOW_COPY_AND_ASSIGN(Cache);

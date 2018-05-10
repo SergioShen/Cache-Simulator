@@ -37,18 +37,21 @@ void Initialize(int argc, char **argv) {
     l1->SetLatency(get_l1_cache_latency());
     l1->SetConfig(get_l1_cache_config());
     l1->SetStats(get_zero_stats());
+    l1->SetPrefetchConfig(get_l1_prefetch_config());
     DEBUG("L1 cache initialized\n");
 #ifdef MULTI_LEVEL
     l2 = new Cache();
     l2->SetLatency(get_l2_cache_latency());
     l2->SetConfig(get_l2_cache_config());
     l2->SetStats(get_zero_stats());
+    l2->SetPrefetchConfig(get_l2_prefetch_config());
     DEBUG("L2 cache initialized\n");
 
     l3 = new Cache();
     l3->SetLatency(get_l3_cache_latency());
     l3->SetConfig(get_l3_cache_config());
     l3->SetStats(get_zero_stats());
+    l3->SetPrefetchConfig(get_l3_prefetch_config());
     DEBUG("L3 cache initialized\n");
 
     l3->SetLower(memory);

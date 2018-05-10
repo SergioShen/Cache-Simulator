@@ -6,7 +6,7 @@ all: sim
 sim: main.o cache.o memory.o config.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-main.o: cache.h memory.h config.h cache.cpp memory.cpp config.cpp
+main.o: cache.h memory.h config.h cache.cpp memory.cpp config.cpp main.cpp
 	$(CC) $(CFLAGS) -c main.cpp
 
 cache.o: cache.h storage.h utility.h cache.cpp

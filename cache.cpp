@@ -94,7 +94,7 @@ void Cache::HandleRequest(uint64_t addr, int bytes, int read, int &hit, int &tim
         }
 
         if (PrefetchDecision())
-            PrefetchAlgorithm();
+            Prefetch(addr);
     }
     DEBUG("Time till this level: %d\n", time);
 }
@@ -149,15 +149,43 @@ CacheBlock *Cache::LRUReplacement(uint64_t index) {
 }
 
 bool Cache::PrefetchDecision() {
-    return false;
+    return prefetch_config_.prefetch;
 }
 
-void Cache::PrefetchAlgorithm() {
+void Cache::Prefetch(uint64_t addr) {
+    DEBUG("Prefetch %d blocks\n", prefetch_config_.prefetch_num);
+    for (int i = 1; i <= prefetch_config_.prefetch_num; i++) {
+        DEBUG("#%d ", i);
+        uint64_t prefetch_address = addr + i * config_.block_size;
+        uint64_t index = (prefetch_address >> config_.num_of_bits_block) & ((1 << config_.num_of_bits_index) - 1);
+        uint64_t tag = prefetch_address >> (config_.num_of_bits_block + config_.num_of_bits_index);
+
+        if (SearchCache(index, tag) != NULL) {
+            DEBUG("Block already in cache\n");
+        } else {
+            DEBUG("Fetch index %lx, tag %lx", index, tag);
+            int time, lower_hit, lower_time;
+
+            // Find a cache block to store data
+            CacheBlock *target_block = FindEmptyBlock(index);
+            if (target_block == NULL)
+                target_block = ChooseVictim(index, time);
+            target_block->tag_ = tag;
+            target_block->dirty_ = false;
+            target_block->valid_ = true;
+            target_block->access_counter = stats_.access_counter;
+
+            // Fetch data from lower level
+            stats_.prefetch_num++;
+            lower_->HandleRequest(addr, 1, 1, lower_hit, lower_time);
+        }
+    }
 }
 
 Cache::Cache() {
     lower_ = NULL;
     cache_blocks_ = NULL;
+    prefetch_config_.prefetch = false;
 }
 
 Cache::~Cache() {
