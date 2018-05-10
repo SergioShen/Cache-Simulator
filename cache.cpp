@@ -177,7 +177,7 @@ void Cache::Prefetch(uint64_t addr) {
 
             // Fetch data from lower level
             stats_.prefetch_num++;
-            lower_->HandleRequest(addr, 1, 1, lower_hit, lower_time);
+            lower_->HandleRequest(prefetch_address, 1, 1, lower_hit, lower_time);
         }
     }
 }

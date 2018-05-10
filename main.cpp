@@ -18,6 +18,8 @@ bool initializing;
 Memory *memory;
 Cache *l1;
 FILE *trace_file;
+int64_t global_timer;
+int64_t global_access_counter;
 
 #ifdef BI_LEVEL
 Cache *l2;
@@ -83,40 +85,39 @@ void Initialize(int argc, char **argv) {
             trace_file = fopen(argv[i], "r");
         }
     }
+    global_timer = 0;
 
     initializing = false;
 }
 
 void PrintStats() {
-    int64_t total_time = 0;
     printf("\n********\n");
     StorageStats stats;
     l1->GetStats(stats);
-    total_time += stats.access_time;
     printf("Total L1 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+    printf("        miss rate: %.6f\n", (float) stats.miss_num / stats.access_counter);
 
 #if defined(BI_LEVEL) || defined(TRI_LEVEL)
     l2->GetStats(stats);
-    total_time += stats.access_time;
     printf("Total L2 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+    printf("        miss rate: %.6f\n", (float) stats.miss_num / stats.access_counter);
 #endif
 
 #if defined(TRI_LEVEL)
     l3->GetStats(stats);
-    total_time += stats.access_time;
     printf("Total L3 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+    printf("        miss rate: %.6f\n", (float) stats.miss_num / stats.access_counter);
 #endif
 
     memory->GetStats(stats);
-    total_time += stats.access_time;
-    printf("Total memory access time: %d cycle, access count: %d\n", stats.access_time, stats.access_counter);
-    printf("TOTAL ACCESS TIME: %d ns\n", total_time);
+    printf("Total memory access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
+    printf("\nTOTAL ACCESS TIME: %ld ns, AMAT: %.6lf ns\n", global_timer, (double) global_timer / global_access_counter);
 }
 
 int main(int argc, char **argv) {
@@ -126,10 +127,12 @@ int main(int argc, char **argv) {
     int hit, time;
     char method[8];
     uint64_t address;
-    while (fscanf(trace_file, "%s%ld", method, &address) == 2) {
+    while (fscanf(trace_file, "%s%lx", method, &address) == 2) {
         DEBUG("\n*** Trace: %s %16.16lx\n", method, address);
         l1->HandleRequest(address, 1, method[0] == 'r', hit, time);
         DEBUG("--- Request time: %d\n", time);
+        global_timer += time;
+        global_access_counter++;
     }
 
     PrintStats();
