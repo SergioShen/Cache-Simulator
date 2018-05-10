@@ -59,8 +59,6 @@ StorageStats get_zero_stats() {
     return stats;
 }
 
-#ifdef MULTI_LEVEL
-
 StorageLatency get_l2_cache_latency() {
     StorageLatency latency;
     latency.bus_latency = 1;
@@ -128,5 +126,3 @@ PrefetchConfig get_l3_prefetch_config() {
 
     return config;
 }
-
-#endif // MULTI_LEVEL

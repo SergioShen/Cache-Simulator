@@ -1,13 +1,13 @@
 CC=g++
 CFLAGS=-w -O2
-
+LEVEL=MONO_LEVEL
 all: sim
 
 sim: main.o cache.o memory.o config.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 main.o: cache.h memory.h config.h cache.cpp memory.cpp config.cpp main.cpp
-	$(CC) $(CFLAGS) -c main.cpp
+	$(CC) $(CFLAGS) -D $(LEVEL) -c main.cpp
 
 cache.o: cache.h storage.h utility.h cache.cpp
 	$(CC) $(CFLAGS) -c cache.cpp

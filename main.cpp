@@ -19,7 +19,11 @@ Memory *memory;
 Cache *l1;
 FILE *trace_file;
 
-#ifdef MULTI_LEVEL
+#ifdef BI_LEVEL
+Cache *l2;
+#endif
+
+#ifdef TRI_LEVEL
 Cache *l2;
 Cache *l3;
 #endif
@@ -39,27 +43,34 @@ void Initialize(int argc, char **argv) {
     l1->SetStats(get_zero_stats());
     l1->SetPrefetchConfig(get_l1_prefetch_config());
     DEBUG("L1 cache initialized\n");
-#ifdef MULTI_LEVEL
+#if defined(BI_LEVEL) || defined(TRI_LEVEL)
     l2 = new Cache();
     l2->SetLatency(get_l2_cache_latency());
     l2->SetConfig(get_l2_cache_config());
     l2->SetStats(get_zero_stats());
     l2->SetPrefetchConfig(get_l2_prefetch_config());
     DEBUG("L2 cache initialized\n");
+#endif
 
+#if defined(TRI_LEVEL)
     l3 = new Cache();
     l3->SetLatency(get_l3_cache_latency());
     l3->SetConfig(get_l3_cache_config());
     l3->SetStats(get_zero_stats());
     l3->SetPrefetchConfig(get_l3_prefetch_config());
     DEBUG("L3 cache initialized\n");
+#endif
 
+#if defined(BI_LEVEL)
+    l2->SetLower(memory);
+    l1->SetLower(l2);
+#elif defined(TRI_LEVEL)
     l3->SetLower(memory);
     l2->SetLower(l3);
     l1->SetLower(l2);
-#else // MULTI_LEVEL
+#else
     l1->SetLower(memory);
-#endif // MULTI_LEVEL
+#endif
 
     // Parse arguments
     for (int i = 1; i < argc; i++) {
@@ -86,20 +97,22 @@ void PrintStats() {
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
 
-#ifdef MULTI_LEVEL
+#if defined(BI_LEVEL) || defined(TRI_LEVEL)
     l2->GetStats(stats);
     total_time += stats.access_time;
     printf("Total L2 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+#endif
 
+#if defined(TRI_LEVEL)
     l3->GetStats(stats);
     total_time += stats.access_time;
     printf("Total L3 access time: %d ns, access count: %d\n", stats.access_time, stats.access_counter);
     printf("        miss num: %d, replace num: %d\n", stats.miss_num, stats.replace_num);
     printf("        fetch num: %d, prefetch num: %d\n", stats.fetch_num, stats.prefetch_num);
+#endif
 
-#endif // MULTI_LEVEL
     memory->GetStats(stats);
     total_time += stats.access_time;
     printf("Total memory access time: %d cycle, access count: %d\n", stats.access_time, stats.access_counter);
